@@ -1,0 +1,210 @@
+import os
+from datetime import datetime
+import streamlit as st
+from docx import Document
+
+st.set_page_config(
+    page_title="Lab Report Wizard", page_icon="📝", layout="centered"
+)
+
+# Initialize step tracker in session state
+if "step" not in st.session_state:
+    st.session_state.step = 1
+
+# Initialize form data storage
+if "form_data" not in st.session_state:
+    st.session_state.form_data = {}
+
+TEMPLATE_PATH = "Lab Report_3.docx"
+
+st.title("📝 Lab Report Step-by-Step Generator")
+
+# Progress bar
+progress_steps = 7
+st.progress(st.session_state.step / progress_steps)
+st.write(f"Step {st.session_state.step} of {progress_steps}")
+
+if not os.path.exists(TEMPLATE_PATH):
+    st.error(
+        f"⚠️ Error: Could not find '{TEMPLATE_PATH}' in the folder. Please make sure your template is uploaded."
+    )
+else:
+    # --- STEP 1: Project Name ---
+    if st.session_state.step == 1:
+        st.subheader("1. اسم المشروع (Project Name)")
+        project_option = st.selectbox(
+            "Select or enter the project name:",
+            [
+                "EBank Assessment For Development",
+                "Custom Project (Type below)",
+            ],
+        )
+        if project_option == "Custom Project (Type below)":
+            project_name = st.text_input("Type the project name:")
+        else:
+            project_name = project_option
+
+        if st.button("Next ➡️"):
+            st.session_state.form_data["project_name"] = project_name
+            st.session_state.step = 2
+            st.rerun()
+
+    # --- STEP 2: Date ---
+    elif st.session_state.step == 2:
+        st.subheader("2. التاريخ (Date)")
+        selected_date = st.date_input("Choose the date:", value=datetime.today())
+        formatted_date = (
+            f"{selected_date.day}.{selected_date.month}.{selected_date.year}"
+        )
+
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("⬅️ Back"):
+                st.session_state.step = 1
+                st.rerun()
+        with col2:
+            if st.button("Next ➡️"):
+                st.session_state.form_data["date"] = formatted_date
+                st.session_state.step = 3
+                st.rerun()
+
+    # --- STEP 3: Period ---
+    elif st.session_state.step == 3:
+        st.subheader("3. الفترة (Period)")
+        period_number = st.number_input(
+            "Write the number (Hour/Session)", min_value=1, max_value=12, value=10
+        )
+        period_time = st.selectbox("Choose AM/PM", ["صباحا", "مساءا"])
+        formatted_period = f"{period_number} {period_time}"
+
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("⬅️ Back"):
+                st.session_state.step = 2
+                st.rerun()
+        with col2:
+            if st.button("Next ➡️"):
+                st.session_state.form_data["period"] = formatted_period
+                st.session_state.step = 4
+                st.rerun()
+
+    # --- STEP 4: Invigilator Name ---
+    elif st.session_state.step == 4:
+        st.subheader("4. اسم المراقب (Invigilator Name)")
+        invigilator_name = st.text_input(
+            "Enter the invigilator's name:",
+            value=st.session_state.form_data.get("invigilator", ""),
+        )
+
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("⬅️ Back"):
+                st.session_state.step = 3
+                st.rerun()
+        with col2:
+            if st.button("Next ➡️"):
+                if not invigilator_name.strip():
+                    st.warning("Please enter a name before proceeding.")
+                else:
+                    st.session_state.form_data["invigilator"] = invigilator_name
+                    st.session_state.step = 5
+                    st.rerun()
+
+    # --- STEP 5: Lab Number (MCQ) ---
+    elif st.session_state.step == 5:
+        st.subheader("5. المعمل (Lab Number)")
+        lab_number = st.radio(
+            "Choose the lab:", ["201", "202", "203", "204", "206"]
+        )
+
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("⬅️ Back"):
+                st.session_state.step = 4
+                st.rerun()
+        with col2:
+            if st.button("Next ➡️"):
+                st.session_state.form_data["lab"] = lab_number
+                st.session_state.step = 6
+                st.rerun()
+
+    # --- STEP 6: Program Serial ---
+    elif st.session_state.step == 6:
+        st.subheader("6. مسلسل البرنامج (Program Serial)")
+        program_serial = st.text_input(
+            "Enter program serial:",
+            value=st.session_state.form_data.get("serial", ""),
+        )
+
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("⬅️ Back"):
+                st.session_state.step = 5
+                st.rerun()
+        with col2:
+            if st.button("Next ➡️"):
+                st.session_state.form_data["serial"] = program_serial
+                st.session_state.step = 7
+                st.rerun()
+
+    # --- STEP 7: Attendance & Notes (Final Step) ---
+    elif st.session_state.step == 7:
+        st.subheader("7. الحضور والملاحظات (Attendance & Notes)")
+        total_names = st.number_input(
+            "عدد الأسماء في الكشف", min_value=0, value=1
+        )
+        total_present = st.number_input("عدد الحضور", min_value=0, value=1)
+        total_absent = st.number_input("عدد الغياب", min_value=0, value=0)
+        notes = st.text_area(
+            "ملاحظات (برجاء كتابة أسماء الغياب أو ما يتم اضافته للمعمل أو أي ملاحظات أخرى)"
+        )
+
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("⬅️ Back"):
+                st.session_state.step = 6
+                st.rerun()
+        with col2:
+            if st.button("Generate Word Document 🎯"):
+                try:
+                    # Load template and replace text based on sample keywords
+                    doc = Document(TEMPLATE_PATH)
+                    replacements = {
+                        "EBank Assessment For Development": st.session_state.form_data[
+                            "project_name"
+                        ],
+                        "5.8.2026": st.session_state.form_data["date"],
+                        "10 صباحا": st.session_state.form_data["period"],
+                        "محمد عامر": st.session_state.form_data["invigilator"],
+                        "203": st.session_state.form_data["lab"],
+                        "30651": st.session_state.form_data["serial"],
+                        "1": str(total_names),
+                    }
+
+                    for p in doc.paragraphs:
+                        for key, val in replacements.items():
+                            if key in p.text:
+                                p.text = p.text.replace(key, val)
+
+                    for table in doc.tables:
+                        for row in table.rows:
+                            for cell in row.cells:
+                                for key, val in replacements.items():
+                                    if key in cell.text:
+                                        cell.text = cell.text.replace(key, val)
+
+                    output_path = "Filled_Lab_Report.docx"
+                    doc.save(output_path)
+
+                    st.success("✅ Report generated successfully!")
+                    with open(output_path, "rb") as file:
+                        st.download_button(
+                            label="📥 Download Filled Word Report",
+                            data=file,
+                            file_name=f"Lab_Report_{st.session_state.form_data['date']}.docx",
+                            mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                        )
+                except Exception as e:
+                    st.error(
+                        f"An error occurred while generating the document: {e}"
+                    )
